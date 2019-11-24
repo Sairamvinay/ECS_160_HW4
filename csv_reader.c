@@ -19,10 +19,12 @@ int getWordCount(const char* text, int length)
     return wordCount;
 }
 
-int getNameColumn(char* line) {
+int getNameColumn(char* line, char* field) {
     int name_column = -1;
+    int num_name_cols = 0;
     int iter = 0;
     const char* token;
+    char corrField[1024];
     printf("Line: %s", line);
     //printf("Got here\n");
     //for (tok = strtok(line, ","); tok && *tok; tok = strtok(NULL, ",\n"))
@@ -31,14 +33,30 @@ int getNameColumn(char* line) {
     /* walk through other tokens */
     while(token != NULL) {
        //printf( " %s\n", token );
-       iter++; 
+       memcpy(corrField,"\0",0);
        token = strtok(NULL, ",");
        if (token == NULL){
 	       break;
        }
-       if (strcmp(token, "\"name\"") == 0) {
+       //add code to check for open and close quotes 
+       iter++;
+       if (token[0] == '"'  && token[strlen(token) -1] == '"') {
+		if (strlen(token) > 1){
+       			memcpy(corrField,&token[1],strlen(token) - 2);
+			//printf("%lu",strlen(corrField));
+			corrField[strlen(token) - 2] = '\0';
+			//printf("%lu",strlen(corrField));
+			printf("%s\n", corrField);
+		}
+       } else {
+	  continue;
+       }
+       if (strcmp(corrField, field) == 0) {
 	 name_column = iter + 1;
-         break;
+         num_name_cols++;
+         if (num_name_cols != 1) {
+	    name_column = -1; // checks that the name column appears once
+	 }
        }
     }
     return name_column;
@@ -67,7 +85,7 @@ int main(int argc, char** argv)
 
     char line[1024];
     float lines = 0;
-    float lenTotal = 0;
+    //float lenTotal = 0;
     int name_column = -1;
     while (fgets(line, 1024, stream))
     {   
@@ -91,7 +109,7 @@ int main(int argc, char** argv)
 	if (lines == 1) {
            //printf(line);
            char* first_line = strdup(line);
-	   name_column = getNameColumn(first_line);
+	   name_column = getNameColumn(first_line, "name");
 	   free(first_line);
            printf("NAME COLUMN: %d\n", name_column);
         }
