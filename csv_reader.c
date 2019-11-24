@@ -33,6 +33,9 @@ int getNameColumn(char* line) {
        //printf( " %s\n", token );
        iter++; 
        token = strtok(NULL, ",");
+       if (token == NULL){
+	       break;
+       }
        if (strcmp(token, "\"name\"") == 0) {
 	 name_column = iter + 1;
          break;
