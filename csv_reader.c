@@ -150,6 +150,19 @@ void printTopTenTweeters(struct TweeterCount TweeterCountPtr[], int num_tweeters
     }
 }
 
+
+int getLineCount(char* filename){
+    FILE* stream2 = fopen(argv[1],"r");
+    int num_lines = 0;
+    char line[1024];
+    while(fgets(line,1024,stream2)) {
+        num_lines++; //even counts the header line
+    }
+
+    return num_lines - 1;
+}
+
+
 int main(int argc, char** argv) {
     if (argc != 2) {
         printf("Invalid number of arguments\n");
@@ -161,15 +174,16 @@ int main(int argc, char** argv) {
         exit(0);
     }
 
-    printf("Input file: %s\n", argv[1]);
+    //printf("Input file: %s\n", argv[1]);
     FILE* stream = fopen(argv[1], "r");
-
+    int num_lines = getLineCount(argv[1]);
+    printf("The number of lines is %d\n",num_lines);
     char line[1024];
     float lines = 0;
     int name_column = -1;
     int num_cols_in_header = -1;
     int num_cols_in_file = -1;
-    struct TweeterCount TweeterCountPtr[20000];
+    struct TweeterCount TweeterCountPtr[num_lines];
     int num_tweeters = 0;
 
     while (fgets(line, 1024, stream)) {   
@@ -177,7 +191,7 @@ int main(int argc, char** argv) {
         if (lines == 1) {
             char* first_line = strdup(line);
             name_column = getFieldColumn(first_line, "name");
-            printf("Name column: %d\n", name_column);
+            //printf("Name column: %d\n", name_column);
             if (name_column == -1) {
                 printf("Invalid csv file.\n");
                 exit(0);
