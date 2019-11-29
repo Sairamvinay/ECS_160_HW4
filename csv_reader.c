@@ -152,7 +152,7 @@ void printTopTenTweeters(struct TweeterCount TweeterCountPtr[], int num_tweeters
 
 
 int getLineCount(char* filename){
-    FILE* stream2 = fopen(argv[1],"r");
+    FILE* stream2 = fopen(filename,"r");
     int num_lines = 0;
     char line[1024];
     while(fgets(line,1024,stream2)) {
