@@ -35,6 +35,7 @@ char* getContent(const char* token) {
         appendToContent = true;
     }
 
+    
     for (int i = 0; i < strlen(token); i++) {
         if (i == lastQuoteLoc) {
             break;
@@ -50,6 +51,8 @@ char* getContent(const char* token) {
             appendToContent = true;
         }
     }
+
+    content[iter - 1] = '\0';
     return content;
 }
 
