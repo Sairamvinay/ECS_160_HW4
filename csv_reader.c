@@ -52,7 +52,7 @@ char* getContent(const char* token) {
         }
     }
 
-    content[iter - 1] = '\0';
+    content[iter] = '\0';
     return content;
 }
 
