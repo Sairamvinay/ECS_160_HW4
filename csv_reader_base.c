@@ -4,16 +4,22 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-struct TweeterCount {
-   char* tweeterName;   
-   int numTweets;
-};
+int getWordCount(const char* text, int length)
+{
+    int wordCount = 0;
+    if(length >= 2) { //Due to quotes;
+        wordCount += 1;
+    }
+    int i = 0;
+    for(i = 0; i < length; i++){
+        if(' ' == text[i]) {
+            wordCount++;
+        }
+    }
+    return wordCount;
+}
 
 char* getContent(const char* token) {
-    if (strlen(token) == 0) {
-        return NULL;
-    }
-
     char* content = (char *)malloc(sizeof(char)*strlen(token));
     bool appendToContent = false;
     int numQuotes = 0;
@@ -87,13 +93,12 @@ int getFieldColumn(char* line, char* field) {
     return name_column;
 }
 
-char* getField(char* line, int num) {
-    char* tok;
-    int iter = 0;
-    while ((tok = strsep(&line, ","))) {
-        if (iter++ == num - 1) {
-            return getContent(tok);
-        }
+const char* getfield(char* line, int num) {
+    const char* tok;
+    for (tok = strtok(line, ","); ; tok = strtok(NULL, ",\n"))
+    {
+        if (!--num)
+            return tok;
     }
     return NULL;
 }
@@ -108,50 +113,8 @@ int getNumCols(char* line) {
     return num_cols;
 }
 
-void addTweeter(struct TweeterCount TweeterCountPtr[], int num_tweeters, char* tweeterName) {
-    // printf("Tweeter name: %s\n", tweeterName);
-    // printf("Num tweeters: %d\n", num_tweeters);
-    char* tmpTweeterName = (char *)malloc(sizeof(char)*strlen(tweeterName));
-    strcpy(tmpTweeterName, tweeterName);
-    struct TweeterCount newTweeter = {.tweeterName = tmpTweeterName, .numTweets = 1};
-    //TweeterCountPtr = realloc(TweeterCountPtr, num_tweeters * sizeof (struct TweeterCount));
-    TweeterCountPtr[num_tweeters - 1] = newTweeter;
-    printf("Tweeter inputted: %s\n", TweeterCountPtr[num_tweeters - 1].tweeterName);
-    return;
-}
-
-int searchAndUpdateTweeter(struct TweeterCount TweeterCountPtr[], int num_tweeters, char* tweeterName) {
-    //printf("Tweeter name: %s\n", tweeterName);
-    for (int i = 0; i < num_tweeters; i++) {
-        if (strcmp(TweeterCountPtr[i].tweeterName, tweeterName) == 0) {
-            TweeterCountPtr[i].numTweets = TweeterCountPtr[i].numTweets + 1;
-            return 0;
-        }
-    }
-    return -1;
-}
-
-void printTopTenTweeters(struct TweeterCount TweeterCountPtr[], int num_tweeters) {
-    int end_of_iter = 10;
-    if (num_tweeters < 10) {
-        end_of_iter = num_tweeters;
-    }
-
-    for (int j = 0; j < end_of_iter; j++) {
-        int max_tweets = -1;
-        int index = -1;
-        for (int i = 0; i < num_tweeters; i++) {
-            if (TweeterCountPtr[i].numTweets > max_tweets) {
-                max_tweets = TweeterCountPtr[i].numTweets;
-                index = i;
-            }
-        }
-        printf("%s: %d\n", TweeterCountPtr[index].tweeterName, TweeterCountPtr[index].numTweets);
-        TweeterCountPtr[index].numTweets = -1;
-    }
-}
-
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     if (argc != 2) {
         printf("Invalid number of arguments\n");
         exit(0);
@@ -170,18 +133,12 @@ int main(int argc, char** argv) {
     int name_column = -1;
     int num_cols_in_header = -1;
     int num_cols_in_file = -1;
-    struct TweeterCount TweeterCountPtr[20000];
-    int num_tweeters = 0;
 
     while (fgets(line, 1024, stream)) {   
         lines++;
         if (lines == 1) {
             char* first_line = strdup(line);
-            name_column = getFieldColumn(first_line, "name");
-            if (name_column == -1) {
-                printf("Invalid csv file.\n");
-                exit(0);
-            }
+            name_column = getFieldColumn(first_line, "negativereason_gold");
             num_cols_in_header = getNumCols(line);
             free(first_line);
             printf("NAME COLUMN: %d\n", name_column);
@@ -192,24 +149,7 @@ int main(int argc, char** argv) {
                 printf("Invalid number of commas in file.\n");
                 exit(0);
             }
-            char* tweeterName = getField(line, name_column);
-            printf("Tweeter name %s\n", tweeterName);
-
-            int searchAndUpdateResult = searchAndUpdateTweeter(TweeterCountPtr, num_tweeters, tweeterName);
-
-            if (searchAndUpdateResult == -1) {
-                num_tweeters++;
-                addTweeter(TweeterCountPtr, num_tweeters, tweeterName);
-            }
         }
     }
 
-    printTopTenTweeters(TweeterCountPtr, num_tweeters);
-
 }
-
-
-
-
-
-
