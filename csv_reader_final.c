@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
     struct TweeterCount TweeterCountPtr[num_lines];
     int num_tweeters = 0;
 
-    if (num_lines < 11) {
+    if (num_lines < 10) {  //10 since header is excluded from counting
         printf("Not enough tweets to rank top 10.\n");
         exit(0);
     }
