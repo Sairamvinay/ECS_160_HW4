@@ -179,6 +179,11 @@ int main(int argc, char** argv) {
     struct TweeterCount TweeterCountPtr[num_lines];
     int num_tweeters = 0;
 
+    if (num_lines < 11) {
+        printf("Not enough tweets to rank top 10.\n");
+        exit(0);
+    }
+
     while (fgets(line, 1024, stream)) {   
         lines++;
         if (lines == 1) {
