@@ -297,6 +297,45 @@ void testContents(){
     printf("\n\n");
 }
 
+
+
+bool checkDuplCols(char* line){
+    char* COLS[MAX_CHAR];   //Assuming worst case; having 1024 col names
+    int num_cols = 0;
+    char* content = "";
+    char* token;    //to extract the field string by seperation
+    while ((token = strsep(&line, ","))){
+        
+        if (token == NULL) {    //if the token is NULL, stop iteration
+            break;
+        }
+
+        content = getContent(token); //extract the field content first
+        if (content == NULL) {  //if nothing, ignore this field alone
+            num_cols++;
+            continue;   //skip 
+        }
+
+        int index = -1;
+        for (int i = 0; i<num_cols; i++){
+            if(strcmp(COLS[i],content) == 0){  //FOUND THIS ALREADY
+                index = i;
+                return true; //There IS a duplicate
+            }
+        }
+
+        if(index == -1){
+            COLS[num_cols] = (char *) malloc(MAX_CHAR);
+            strcpy(COLS[num_cols],content);
+        }
+
+        num_cols++; //count the num_fields
+
+    }
+
+    return false;
+}
+
 int main(int argc, char** argv) {
     if (argc != 2) {    //if there is no argument for the filename to parse, quit the program
         printf("Invalid number of arguments\n");
@@ -328,16 +367,23 @@ int main(int argc, char** argv) {
         if (lines == HEADER_LINENO) { //if the header line is being read in
 
             num_cols_in_header = getNumCols(line); //get the number of columns in the header
+
             if(num_cols_in_header == 0){    //Empty header
-                printf("Invalid csv file.\n");
+                printf("NO HEADER: Invalid csv file.\n");
                 exit(0);
             }
             
+            char* first_line_copy = strdup(line);
             char* first_line = strdup(line);    //copy the line first
+            if(checkDuplCols(first_line_copy)){
+                printf("Duplicate Header Fields Found: Invalid csv file.\n");
+                exit(0);
+            }
             name_column = getFieldColumn(first_line, "name",&isNameQuoted); //find the col number of field name
-            
+            //ANOTHER FUNCTION TO CHECK FOR DUPL COLS IN HEADER
+
             if (name_column == -1) { //if not found
-                printf("Invalid csv file.\n");
+                printf("NAME NOT FOUND: Invalid csv file.\n");
                 exit(0);
             }
            
@@ -358,7 +404,7 @@ int main(int argc, char** argv) {
             }
 
             if (strcmp(tweeterName,ERROR) == 0){ //MISMATCH IN QUOTES; file is invalid
-                printf("Invalid csv file.\n");
+                printf("NAME WRONGLY QUOTED: Invalid csv file.\n");
                 exit(0);
             }
             
