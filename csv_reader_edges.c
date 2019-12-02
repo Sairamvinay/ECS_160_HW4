@@ -350,14 +350,15 @@ int main(int argc, char** argv) {
 
             
             char* tweeterName = getField(line, name_column,isNameQuoted); //extract the tweeter name in every other line
-            if (strcmp(tweeterName,ERROR) == 0){ //MISMATCH IN QUOTES; file is invalid
-                printf("Invalid csv file.\n");
-                exit(0);
-            }
             if (tweeterName == NULL) { //if tweetername is empty
                 tweeterName = EMPTY_KEYWORD; // set it to a common empty keyword for these tweeters
             }
 
+            if (strcmp(tweeterName,ERROR) == 0){ //MISMATCH IN QUOTES; file is invalid
+                printf("Invalid csv file.\n");
+                exit(0);
+            }
+            
             int searchAndUpdateResult = searchAndUpdateTweeter(TweeterCountPtr, num_tweeters, tweeterName); //look into the array first
             if (searchAndUpdateResult == -1) { //if not found in array
                 num_tweeters++; //count the increase in number of tweeters
