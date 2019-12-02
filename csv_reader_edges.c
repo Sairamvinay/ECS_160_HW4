@@ -5,6 +5,18 @@
 //TO DO: check for names of other fields are repetitive or not (NOT NEEDED)
 //TO DO: check for atmost 1 set of quotes in the col name (DONE)
 //TO DO: no commas within the quotes (DONE)
+//TO DO: Not remove whitespace in cols (DONE)
+//TO DO: check if num_items in each line match (DONE)
+//TO DO: check for empty.csv (HARI SAID DONE)
+//TO DO: check for header or no header (DONE)
+//TO DO: check if columns should be either all quoted or all not quoted to be valid.  (QN 325 says no need)
+//TO DO: check if the column name is quoted, then check every item is quoted, else call invalid file (DONE)
+//TO DO: check for more than 20000 lines (DONE)
+
+//TO DO: verify for rows ending with a comma (that's a seperate empty column)
+
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +27,9 @@
 #define MAX_CHAR 1024
 #define TOPKTWEETS 10
 #define HEADER_LINENO 1
+#define MAX_LINES 20000
+#define ERROR "MISMATCH_QUOTES"
+#define EMPTY_KEYWORD "empty_keyword_not_found_user"
 //A struct object to record each distinct user within the CSV file
 //The object works more like a map with the userName mapped to the corresponding number of tweets
 struct TweeterCount {   
@@ -74,6 +89,11 @@ char* getContent(char* token) {
 	if (lastQuoteLoc != -1){
     //A loop following the check after the lastQuoteLoc within the token to check for spaces inside the token (PIAZZA QN 320)
 	    for (int j=lastQuoteLoc + 1;j<strlen(token);j++){
+            if(token[j] == 0){
+
+                break;
+            }
+            
 	    	if (token[j] != ' '){
 	    		checkIfSpaceAfterQuotes = false;
 	    	}
@@ -126,14 +146,29 @@ char* getContent(char* token) {
     return content;
 }
 
+bool checkQuoted(char* field){
+
+    if (field == NULL){
+        return false;
+    }
+
+    if (field[0] == '\"' && field[strlen(field) - 1] == '\"'){
+        return true;
+    }
+
+    return false;
+
+}
+
 //run through the particular line and find the col number of that field matching within the line
-int getFieldColumn(char* line, char* field) {
+int getFieldColumn(char* line, char* field,bool* isNameQuoted) {
     int name_column = 0; //look through that particular field Column
     int num_name_cols = 0;  //checking to see if that field is repeated more than once
     int iter = 0; //run through the count of the number of seperate fields inside the line
     char* token;    //to extract the field string by seperation
     char* content = "";
-   
+    int num_empty_cols = 0;
+
     while ((token = strsep(&line, ","))) {
         iter++; //count the num_fields
         if (token == NULL) {    //if the token is NULL, ignore
@@ -142,11 +177,16 @@ int getFieldColumn(char* line, char* field) {
 
         content = getContent(token); //extract the field content first
         if (content == NULL) {  //if nothing, ignore this field alone
-            continue;
+            num_empty_cols++;
+            if(num_empty_cols > 1){ //if more than one empty col
+                return -1;  //invalid file
+            }
+            continue;   //skip if not
         }
 
         if (strcmp(content, field) == 0) { //if the field is found
             name_column = iter + 1; //find the col number
+            *isNameQuoted = checkQuoted(token);
             num_name_cols++;    //add the number of such columns
             if (num_name_cols != 1) {   //if more than 1 such columns
                 return -1; // checks that the field column appears once
@@ -157,13 +197,19 @@ int getFieldColumn(char* line, char* field) {
 }
 
 //extracts that particular field given the column number (the reverse of the previous function logically)
-char* getField(char* line, int num) {
+char* getField(char* line, int num,bool isFieldQuoted) {
     char* tok;
     int iter = 0;
 
     while ((tok = strsep(&line, ","))) {
         if (iter++ == num - 1) {    //if found that requested col num, then return that field content
-            return getContent(tok);
+            bool isNameQuoted = checkQuoted(tok);
+            if (isNameQuoted == isFieldQuoted){ //IF field and the item in field match wrt quotations
+                return getContent(tok);
+            }else{
+                return ERROR;
+            }
+            
         }
     }
     return NULL; //else, return null
@@ -236,6 +282,20 @@ int getLineCount(char* filename){
     return num_lines - 1; //exclude the header line
 }
 
+void testContents(){
+    printf("\nIncorrect Cases:\n\n");
+    getContent("\"AB\"C"); // INVALID; wrong ending quote and still some chars after the end
+    getContent("\"ABC");    //INVALID; no closing quote
+    getContent("abc\"dog\""); //INVALID: open and close don't match
+    //getContent("\"AB\"\n");   //INVALID NEEDS A FIX: RETURNS BUS ERROR
+
+    printf("\nCorrect Cases:\n\n");
+    printf("%s\n",getContent("\"AB\"\"C\""));   //correct, it does work
+    printf("%sSpaces\n",getContent("    \"ABBBC\"       "));    //correct again, it should print the whole content with spaces
+    printf("%s\n",getContent("\"ab\"cd\"ef\""));    //Correct once again
+    
+    printf("\n\n");
+}
 
 int main(int argc, char** argv) {
     if (argc != 2) {    //if there is no argument for the filename to parse, quit the program
@@ -251,41 +311,51 @@ int main(int argc, char** argv) {
     FILE* stream = fopen(argv[1], "r");
     int num_lines = getLineCount(argv[1]); //get the number of lines in the file
     char line[MAX_CHAR];    //to read in every file
-    float lines = 0; //used to check the lines count inside the program
+    int lines = 0; //used to check the lines count inside the program
     int name_column = -1; //the name column in the file
     int num_cols_in_header = -1; //look through the num columns in the header
     int num_cols_in_file = -1; //look through the num columns in the file
     struct TweeterCount TweeterCountPtr[num_lines]; //array of all tweeter objects
     int num_tweeters = 0; //number of distinct tweeters
+    bool isNameQuoted = false; //a bool to verify quotations inside the names or not
 
-
-    // //if the number of lines in the file is less than 10, definetely there are less than 10 distinct tweeters
-    // if (num_lines < TOPKTWEETS) {  //10 since header is excluded from counting
-    //     printf("Not enough tweets to rank top 10.\n");
-    // }
-
+    if (num_lines > MAX_LINES){ //if more than 20000 lines in the file
+        printf("Invalid input format.\n");
+        exit(0);
+    }
     while (fgets(line, MAX_CHAR, stream)) {   //read every line of the file
         lines++; //count the lines
         if (lines == HEADER_LINENO) { //if the header line is being read in
             char* first_line = strdup(line);    //copy the line first
-            name_column = getFieldColumn(first_line, "name"); //find the col number of field name
+            name_column = getFieldColumn(first_line, "name",&isNameQuoted); //find the col number of field name
+            
             if (name_column == -1) { //if not found
                 printf("Invalid csv file.\n");
                 exit(0);
             }
             num_cols_in_header = getNumCols(line); //get the number of columns in the header
+            if(num_cols_in_header == 0){    //Empty header
+                printf("Invalid csv file.\n");
+                exit(0);
+            }
         } else {
             num_cols_in_file = getNumCols(line); //find the number of columns in the file (every line is assumed to have same number of columns)
+            if(num_cols_in_file == 0){  //if line is empty
+                continue;      //ignore this line
+            }
             if (num_cols_in_file != num_cols_in_header) { //if there's a mismatch in number of cols in the file
-                printf("Invalid number of commas in file.\n");
+                printf("Invalid input format.\n");
                 exit(0);
             }
 
             
-            char* tweeterName = getField(line, name_column); //extract the tweeter name in every other line
-            if (tweeterName == NULL) { //if not found, skip the line
-                //continue;
-                tweeterName = "empty"; // set it to a common empty keyword for these tweeters
+            char* tweeterName = getField(line, name_column,isNameQuoted); //extract the tweeter name in every other line
+            if (strcmp(tweeterName,ERROR) == 0){ //MISMATCH IN QUOTES; file is invalid
+                printf("Invalid csv file.\n");
+                exit(0);
+            }
+            if (tweeterName == NULL) { //if tweetername is empty
+                tweeterName = EMPTY_KEYWORD; // set it to a common empty keyword for these tweeters
             }
 
             int searchAndUpdateResult = searchAndUpdateTweeter(TweeterCountPtr, num_tweeters, tweeterName); //look into the array first
@@ -295,18 +365,9 @@ int main(int argc, char** argv) {
             }
         }
     }
-    printf("\nIncorrect Cases:\n\n");
-    getContent("\"AB\"C"); // INVALID; wrong ending quote and still some chars after the end
-    getContent("\"ABC");	//INVALID; no closing quote
-    getContent("abc\"dog\""); //INVALID: open and close don't match
-    //getContent("\"AB\"\n");	//INVALID NEEDS A FIX: RETURNS BUS ERROR
-
-    printf("\nCorrect Cases:\n\n");
-    printf("%s\n",getContent("\"AB\"\"C\""));	//correct, it does work
-    printf("%sSpaces\n",getContent("    \"ABBBC\"       "));	//correct again, it should print the whole content with spaces
-    printf("%s\n",getContent("\"ab\"cd\"ef\""));	//Correct once again
     
-    printf("\n\n");
+    //testContents();
+    printf("The CSV file is VALID\n");
     printTopTenTweeters(TweeterCountPtr, num_tweeters); //print top ten tweeters once we finish parsing and collecting within the file
 
 }
