@@ -30,6 +30,9 @@
 #define MAX_LINES 20000
 #define ERROR "MISMATCH_QUOTES"
 #define EMPTY_KEYWORD "empty_keyword_not_found_user"
+#define WRONGQUOTES "Wrong number of quotes"
+#define WRONGLOC "Wrong Location of quotes at end"
+#define INCORRECTQUOTES "Incorrect Placement of the quotes"
 //A struct object to record each distinct user within the CSV file
 //The object works more like a map with the userName mapped to the corresponding number of tweets
 struct TweeterCount {   
@@ -104,18 +107,18 @@ char* getContent(char* token) {
     //if the count of number of quotes is 1, then it is incorrect number of quotes
     if (numQuotes == 1) {
         printf("Incorrect number of quotes: %s\n", token);
-        return NULL;
+        return WRONGQUOTES;
     }
 
     //Check if quotes have to be at end (if quoted) and if there is still characters left after the quotes end
     if ((lastQuoteLoc != strlen(token) - 1) && !checkIfSpaceAfterQuotes){
     	printf("Incorrect Location of the outer quotes: %s\n",token);
-    	return NULL;
+    	return WRONGLOC;
     }
 
     if (firstQuoteLoc != 0 && !checkIfSpaceBeforeQuotes){
     	printf("Wrong Location of the outer quotes; not at beginning and not at end :%s\n",token);
-    	return NULL;
+    	return INCORRECTQUOTES;
     }
 
     //if the opening has 0 quotes or if the string does'nt start with quotes; we have to start adding right from the beginning
@@ -182,6 +185,10 @@ int getFieldColumn(char* line, char* field,bool* isNameQuoted) {
                 return -1;  //invalid file
             }
             continue;   //skip if not
+        }
+
+        if ((strcmp(content,WRONGQUOTES) == 0) || (strcmp(content,WRONGLOC) == 0) || (strcmp(content,INCORRECTQUOTES) == 0)){
+            return -1; // Since they have irregular values
         }
 
         if (strcmp(content, field) == 0) { //if the field is found
@@ -312,8 +319,11 @@ bool checkDuplCols(char* line){
 
         content = getContent(token); //extract the field content first
         if (content == NULL) {  //if nothing, ignore this field alone
-            num_cols++;
             continue;   //skip 
+        }
+
+        if ((strcmp(content,WRONGQUOTES) == 0) || (strcmp(content,WRONGLOC) == 0) || (strcmp(content,INCORRECTQUOTES) == 0)){
+            return true; // Since they have irregular values, we want to declare file as invalid
         }
 
         int index = -1;
@@ -402,6 +412,11 @@ int main(int argc, char** argv) {
             if (tweeterName == NULL) { //if tweetername is empty
                 tweeterName = EMPTY_KEYWORD; // set it to a common empty keyword for these tweeters
             }
+
+            if ((strcmp(tweeterName,WRONGQUOTES) == 0) || (strcmp(tweeterName,WRONGLOC) == 0) || (strcmp(tweeterName,INCORRECTQUOTES) == 0)){
+               printf("WRONG QUOTATION PROBLEMS: Invalid csv file\n"); // Since they have irregular values
+               exit(0);
+            }  
 
             if (strcmp(tweeterName,ERROR) == 0){ //MISMATCH IN QUOTES; file is invalid
                 printf("NAME WRONGLY QUOTED: Invalid csv file.\n");
