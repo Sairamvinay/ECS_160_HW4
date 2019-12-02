@@ -1,23 +1,3 @@
-//TO DO: Check if quotes have to be at end (CHECKED)
-//TO DO: IF less than 10 lines, print whatever u have (CHECKED)
-//TO DO: Look out for empty tweeter (if name is NULL) (CHECKED)
-//TO DO: Whatever between commas, extract it out and use it (no normalizing) (CHECKED)
-//TO DO: check for names of other fields are repetitive or not (NOT NEEDED)
-//TO DO: check for atmost 1 set of quotes in the col name (DONE)
-//TO DO: no commas within the quotes (DONE)
-//TO DO: Not remove whitespace in cols (DONE)
-//TO DO: check if num_items in each line match (DONE)
-//TO DO: check for empty.csv (HARI SAID DONE)
-//TO DO: check for header or no header (DONE)
-//TO DO: check if columns should be either all quoted or all not quoted to be valid.  (QN 325 says no need)
-//TO DO: check if the column name is quoted, then check every item is quoted, else call invalid file (DONE)
-//TO DO: check for more than 20000 lines (DONE)
-
-//TO DO: verify for rows ending with a comma (that's a seperate empty column)
-
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -289,23 +269,6 @@ int getLineCount(char* filename){
     return num_lines - 1; //exclude the header line
 }
 
-void testContents(){
-    printf("\nIncorrect Cases:\n\n");
-    getContent("\"AB\"C"); // INVALID; wrong ending quote and still some chars after the end
-    getContent("\"ABC");    //INVALID; no closing quote
-    getContent("abc\"dog\""); //INVALID: open and close don't match
-    //getContent("\"AB\"\n");   //INVALID NEEDS A FIX: RETURNS BUS ERROR
-
-    printf("\nCorrect Cases:\n\n");
-    printf("%s\n",getContent("\"AB\"\"C\""));   //correct, it does work
-    printf("%sSpaces\n",getContent("    \"ABBBC\"       "));    //correct again, it should print the whole content with spaces
-    printf("%s\n",getContent("\"ab\"cd\"ef\""));    //Correct once again
-    
-    printf("\n\n");
-}
-
-
-
 bool checkDuplCols(char* line){
     char* COLS[MAX_CHAR];   //Assuming worst case; having 1024 col names
     int num_cols = 0;
@@ -390,7 +353,6 @@ int main(int argc, char** argv) {
                 exit(0);
             }
             name_column = getFieldColumn(first_line, "name",&isNameQuoted); //find the col number of field name
-            //ANOTHER FUNCTION TO CHECK FOR DUPL COLS IN HEADER
 
             if (name_column == -1) { //if not found
                 printf("NAME NOT FOUND: Invalid csv file.\n");
@@ -430,9 +392,6 @@ int main(int argc, char** argv) {
             }
         }
     }
-    
-    //testContents();
-    printf("The CSV file is VALID\n");
     printTopTenTweeters(TweeterCountPtr, num_tweeters); //print top ten tweeters once we finish parsing and collecting within the file
 
 }
