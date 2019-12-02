@@ -326,6 +326,13 @@ int main(int argc, char** argv) {
     while (fgets(line, MAX_CHAR, stream)) {   //read every line of the file
         lines++; //count the lines
         if (lines == HEADER_LINENO) { //if the header line is being read in
+
+            num_cols_in_header = getNumCols(line); //get the number of columns in the header
+            if(num_cols_in_header == 0){    //Empty header
+                printf("Invalid csv file.\n");
+                exit(0);
+            }
+            
             char* first_line = strdup(line);    //copy the line first
             name_column = getFieldColumn(first_line, "name",&isNameQuoted); //find the col number of field name
             
@@ -333,11 +340,7 @@ int main(int argc, char** argv) {
                 printf("Invalid csv file.\n");
                 exit(0);
             }
-            num_cols_in_header = getNumCols(line); //get the number of columns in the header
-            if(num_cols_in_header == 0){    //Empty header
-                printf("Invalid csv file.\n");
-                exit(0);
-            }
+           
         } else {
             num_cols_in_file = getNumCols(line); //find the number of columns in the file (every line is assumed to have same number of columns)
             if(num_cols_in_file == 0){  //if line is empty
